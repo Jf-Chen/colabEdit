@@ -28,6 +28,7 @@ def display_args(args):
     print('N = %d' % (args.N))
     print('K = %d' % (args.K))
     print('Q = %d' % (args.Q))
+    print('neighbor_k = %d' % (args.neighbor_k))
     print('===== experiment environment arguments =====')
     print('devices = %s' % str(args.devices))
     print('flag_debug = %r' % (args.flag_debug))
