@@ -114,8 +114,9 @@ class MyModel(nn.Module):
                 B,C=support_set_sam.size()
                 descriptor=1
                 support_set_sam_v = support_set_sam.contiguous().view(descriptor,-1)
+                support_set_sam_v_norm = F.normalize(support_set_sam_v, dim=1, p=2)
                 # 由于特征维度是1,不能进行归一化
-                innerproduct_matrix = query_sam_v@support_set_sam_v
+                innerproduct_matrix = query_sam_v@support_set_sam_v_norm
                 topk_value, topk_index = torch.topk(innerproduct_matrix, self.args.neighbor_k, 1)
                 inner_sim[0, j] = torch.sum(topk_value)
                 
