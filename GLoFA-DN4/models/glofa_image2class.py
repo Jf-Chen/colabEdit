@@ -122,7 +122,7 @@ class MyModel(nn.Module):
             Similarity_list.append(inner_sim)
             
         Similarity_list = torch.cat(Similarity_list, 0)
-        collapsed_logits=Similarity_list.transpose(0, 1)
+        collapsed_logits=Similarity_list
         #===================================== end ===============================================
 
         return collapsed_logits
