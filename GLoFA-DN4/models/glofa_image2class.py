@@ -103,26 +103,27 @@ class MyModel(nn.Module):
         #==================start 使用glofa_image2class DN4的相似度计算方式,输出是[args.N,args.Q*args.K]===============
         Similarity_list = []
         for i in range(self.args.Q * self.args.K):
-            query_sam=masked_query_embeddings[0,i,:]
-            query_sam_v=query_sam.contiguous().view(-1,1)
+            
             
             if torch.cuda.is_available():
                 inner_sim = torch.zeros(1, self.args.N).cuda()
             
             for j in range(self.args.N):
-                support_set_sam=masked_support_embeddings[j,:,:]
+                query_sam=masked_query_embeddings[j,i,:] # 第j个mask，第i张query image
+                query_sam_v=query_sam.contiguous().view(-1,1) # [640,1]
+                
+                support_set_sam=masked_support_embeddings[j,:,:] #[5,640]
                 B,C=support_set_sam.size()
                 descriptor=1
-                support_set_sam_v = support_set_sam.contiguous().view(descriptor,-1)
-                support_set_sam_v_norm = F.normalize(support_set_sam_v, dim=1, p=2)
-                # 由于特征维度是1,不能进行归一化
+                support_set_sam_v = support_set_sam.contiguous().view(descriptor,-1) #[1,3200]
+                support_set_sam_v_norm = F.normalize(support_set_sam_v, dim=1, p=2) # [1, 3200]
                 innerproduct_matrix = query_sam_v@support_set_sam_v_norm
                 topk_value, topk_index = torch.topk(innerproduct_matrix, self.args.neighbor_k, 1)
                 inner_sim[0, j] = torch.sum(topk_value)
                 
             Similarity_list.append(inner_sim)
             
-        Similarity_list = torch.cat(Similarity_list, 0)
+        Similarity_list = torch.cat(Similarity_list, 0) # [50,5]
         collapsed_logits=Similarity_list
         #===================================== end ===============================================
 
