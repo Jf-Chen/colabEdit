@@ -83,11 +83,12 @@ class MyModel(nn.Module):
         alpha = self.h(support_embeddings, level='balance').squeeze(0) # torch.Size([2]
         [alpha_task, alpha_class] = alpha
 
-        masked_support_embeddings = support_embeddings.view(self.args.K, self.args.N, -1) * \
-            (1 + mask_task * alpha_task) * (1 + mask_class * alpha_class) # torch.Size([5, 5, 640])
+        # masked_support_embeddings = support_embeddings.view(self.args.K, self.args.N, -1) * \
+            #(1 + mask_task * alpha_task) * (1 + mask_class * alpha_class) # torch.Size([5, 5, 640])
+        masked_support_embeddings = support_embeddings.view(self.args.K, self.args.N, -1)
         prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640])
         # 视余弦距离不同而加权
-        dis=torch.zeros(self.args.N,self.args.K,devices=self.args.devices)
+        dis=torch.zeros(self.args.N,self.args.K,device=self.args.devices[0])
         for i in range(masked_support_embeddings.size()[0]): #0~5
             temp_p=prototypes_unnorm[i,:]
             for j in  range(masked_support_embeddings.size()[1]): #0~5
@@ -95,7 +96,7 @@ class MyModel(nn.Module):
                 dis[i,j]=torch.dist(temp_p,temp_s,p=1)
                 
         sum_dis=torch.sum(dis,1)
-        prototypes_dis=torch.zeros(prototypes_unnorm.size(),devices=self.args.devices)
+        prototypes_dis=torch.zeros(prototypes_unnorm.size(),device=self.args.devices[0])
         for i in range(masked_support_embeddings.size()[0]): #0~5
             for j in  range(masked_support_embeddings.size()[1]): #0~5
                 prototypes_dis[i,:]=prototypes_dis[i,:]+(dis[i,j]/sum_dis[i])*masked_support_embeddings[i,j,:]
@@ -105,8 +106,9 @@ class MyModel(nn.Module):
         prototypes = F.normalize(prototypes_dis, dim=1, p=2) # torch.Size([5, 640])
         
         # query.unsqueeze().expand():[50,640]->[1,50,640]->[5,50,640]
-        masked_query_embeddings = query_embeddings.unsqueeze(0).expand(self.args.N, -1, -1) * \
-            (1 + mask_task * alpha_task) * (1 + mask_class.transpose(0, 1) * alpha_class) # torch.Size([5, 50, 640])
+        # masked_query_embeddings = query_embeddings.unsqueeze(0).expand(self.args.N, -1, -1) * \
+            # (1 + mask_task * alpha_task) * (1 + mask_class.transpose(0, 1) * alpha_class) # torch.Size([5, 50, 640])
+        masked_query_embeddings = query_embeddings.unsqueeze(0).expand(self.args.N, -1, -1)
         #------------------------- end ---------------------------------#
         
         
