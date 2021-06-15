@@ -87,7 +87,7 @@ class MyModel(nn.Module):
             (1 + mask_task * alpha_task) * (1 + mask_class * alpha_class) # torch.Size([5, 5, 640])
         prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640])
         # 视余弦距离不同而加权
-        dis=torch.zeros(self.args.N,self.args.K)
+        dis=torch.zeros(self.args.N,self.args.K,devices=self.args.devices)
         for i in range(masked_support_embeddings.size()[0]): #0~5
             temp_p=prototypes_unnorm[i,:]
             for j in  range(masked_support_embeddings.size()[1]): #0~5
@@ -95,7 +95,7 @@ class MyModel(nn.Module):
                 dis[i,j]=torch.dist(temp_p,temp_s,p=1)
                 
         sum_dis=torch.sum(dis,1)
-        prototypes_dis=torch.zeros(prototypes_unnorm.size())
+        prototypes_dis=torch.zeros(prototypes_unnorm.size(),devices=self.args.devices)
         for i in range(masked_support_embeddings.size()[0]): #0~5
             for j in  range(masked_support_embeddings.size()[1]): #0~5
                 prototypes_dis[i,:]=prototypes_dis[i,:]+(dis[i,j]/sum_dis[i])*masked_support_embeddings[i,j,:]
