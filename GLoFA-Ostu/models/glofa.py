@@ -71,7 +71,12 @@ class MyModel(nn.Module):
 
         support_embeddings = embeddings[:self.args.N * self.args.K, :] # [25,640]
         query_embeddings = embeddings[self.args.N * self.args.K:, :] # [50,640]
-
+        
+        
+        # 对support和query相同处理，主要修改求mean的方式
+            
+            
+        #—————————————————————— start —————————————————————————————#
         mask_task = self.f_task(support_embeddings, level='task').unsqueeze(0) # ([1, 1, 640])
         mask_class = self.f_class(support_embeddings, level='class').unsqueeze(0) # [1, 5, 640]
 
@@ -80,52 +85,42 @@ class MyModel(nn.Module):
 
         masked_support_embeddings = support_embeddings.view(self.args.K, self.args.N, -1) * \
             (1 + mask_task * alpha_task) * (1 + mask_class * alpha_class) # torch.Size([5, 5, 640])
-        prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640]) 
-        prototypes = F.normalize(prototypes_unnorm, dim=1, p=2) # torch.Size([5, 640])
+        prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640])
+        # 视余弦距离不同而加权
+        dis=torch.zeros(self.args.N,self.args.K,1)
+        for i in range(masked_support_embeddings.size()[0]): #0~5
+            temp_p=prototypes_unnorm[i,:]
+            for j in  range(masked_support_embeddings.size()[1]): #0~5
+                temp_s=masked_support_embeddings[i,j,:]
+                dis[i,j,:]=torch.dist(temp_p,temp_s,p=1)
+                
+        sum_dis=torch.sum(dis,1)
+        prototypes_dis=torch.zeros(prototypes_unnorm.size())
+        for i in range(masked_support_embeddings.size()[0]): #0~5
+            for j in  range(masked_support_embeddings.size()[1]): #0~5
+                prototypes_dis[i,:]=prototypes_dis[i,:]+(dis[i,j]/sum_dis[i])*masked_support_embeddings[i,j,:]
+        
+        
+        
+        prototypes = F.normalize(prototypes_dis, dim=1, p=2) # torch.Size([5, 640])
         
         # query.unsqueeze().expand():[50,640]->[1,50,640]->[5,50,640]
         masked_query_embeddings = query_embeddings.unsqueeze(0).expand(self.args.N, -1, -1) * \
             (1 + mask_task * alpha_task) * (1 + mask_class.transpose(0, 1) * alpha_class) # torch.Size([5, 50, 640])
+        #------------------------- end ---------------------------------#
         
         
-        #==================start 原本的相似度计算方式，输出是[args.N,args.Q*args.K]===============
-        # # logits ->torch.Size([5, 50, 5]) torch.bmm:两矩阵相乘 tensor.t():矩阵转置
-        # # torch.bmm([b,h,w],[b,w,h])=[b,h,h]
-        # # .t().unsqueeze().expand()，size的变化为
-        # # [5,640]->[640,5]->[1, 640, 5]->[5, 640, 5]
-        # logits = torch.bmm(masked_query_embeddings, prototypes.t().unsqueeze(0).expand(self.args.N, -1, -1)) / self.args.tau # ([5, 50, 5])
-        # x = torch.arange(self.args.N).long().cuda(self.args.devices[0]) # torch.Size([5])
-        # collapsed_logits = logits[x, :, x].t() # torch.Size([50, 5])
-        # # [x, :, x]相当于，当x=1时，提取logits[1, :, 1],(比如[1,1,1],...[1,50,1]),
-        # # 得到50个数[1,50]，累计5次得到[5,50] 含义是各个样本相对于类别的相似度
-        #===================================== end ===============================================
-        
-        #==================start 使用glofa_image2class DN4的相似度计算方式,输出是[args.N,args.Q*args.K]===============
-        Similarity_list = []
-        for i in range(self.args.Q * self.args.K):
-            
-            
-            if torch.cuda.is_available():
-                inner_sim = torch.zeros(1, self.args.N).cuda()
-            
-            for j in range(self.args.N):
-                query_sam=masked_query_embeddings[j,i,:] # 第j个mask，第i张query image
-                query_sam_v=query_sam.contiguous().view(-1,1) # [640,1]
-                
-                support_set_sam=masked_support_embeddings[j,:,:] #[5,640],同一类的五张图
-                B,C=support_set_sam.size()
-                descriptor=1
-                support_set_sam_v = support_set_sam.contiguous().view(descriptor,-1) #[1,3200]
-                support_set_sam_v_norm = F.normalize(support_set_sam_v, dim=1, p=2) # [1, 3200]
-                innerproduct_matrix = query_sam_v@support_set_sam_v_norm
-                topk_value, topk_index = torch.topk(innerproduct_matrix, self.args.neighbor_k, 1)
-                inner_sim[0, j] = torch.sum(topk_value)
-                
-            Similarity_list.append(inner_sim)
-            
-        Similarity_list = torch.cat(Similarity_list, 0) # [50,5]
-        collapsed_logits=Similarity_list
-        #===================================== end ===============================================
+        # logits ->torch.Size([5, 50, 5]) torch.bmm:两矩阵相乘 tensor.t():矩阵转置
+        # torch.bmm([b,h,w],[b,w,h])=[b,h,h]
+        # .t().unsqueeze().expand()，size的变化为
+        # [5,640]->[640,5]->[1, 640, 5]->[5, 640, 5]
+
+        #logits ->torch.Size([5, 75, 5] torch.bmm:两矩阵相乘 tensor.t():矩阵转置
+        logits = torch.bmm(masked_query_embeddings, prototypes.t().unsqueeze(0).expand(self.args.N, -1, -1)) / self.args.tau  # ([5, 50, 5])
+        x = torch.arange(self.args.N).long().cuda(self.args.devices[0]) # torch.Size([5])
+        collapsed_logits = logits[x, :, x].t() # torch.Size([50, 5])
+        # [x, :, x]相当于，当x=1时，提取logits[1, :, 1],(比如[1,1,1],...[1,50,1]),
+        # 得到50个数[1,50]，累计5次得到[5,50] 含义是各个样本相对于类别的相似度
 
         return collapsed_logits
     
