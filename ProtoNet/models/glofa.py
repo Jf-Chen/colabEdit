@@ -82,8 +82,21 @@ class MyModel(nn.Module):
 
         
         masked_support_embeddings = support_embeddings.view(self.args.K, self.args.N, -1)
-        prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640])
-        prototypes = F.normalize(prototypes_unnorm, dim=1, p=2) # torch.Size([5, 640])
+        # 视余弦距离不同而加权
+        dis=torch.zeros(self.args.N,self.args.K,device=self.args.devices[0])
+        for i in range(masked_support_embeddings.size()[0]): #0~5
+            temp_p=prototypes_unnorm[i,:]
+            for j in  range(masked_support_embeddings.size()[1]): #0~5
+                temp_s=masked_support_embeddings[i,j,:]
+                dis[i,j]=torch.exp(torch.nn.functional.cosine_similarity(temp_p,temp_s,dim=0))
+        sum_dis=torch.sum(dis,1)
+        prototypes_dis=torch.zeros(prototypes_unnorm.size(),device=self.args.devices[0])
+        for i in range(masked_support_embeddings.size()[0]): #0~5
+            for j in  range(masked_support_embeddings.size()[1]): #0~5
+                prototypes_dis[i,:]=prototypes_dis[i,:]+(dis[i,j]/sum_dis[i])*masked_support_embeddings[i,j,:]
+        
+        # prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640])
+        prototypes = F.normalize(prototypes_dis, dim=1, p=2) # torch.Size([5, 640])
 
         masked_query_embeddings = query_embeddings.unsqueeze(0).expand(self.args.N, -1, -1)
 

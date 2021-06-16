@@ -94,7 +94,7 @@ class MyModel(nn.Module):
             temp_p=prototypes_unnorm[i,:]
             for j in  range(masked_support_embeddings.size()[1]): #0~5
                 temp_s=masked_support_embeddings[i,j,:]
-                dis[i,j]=torch.exp(torch.cosine_similarity(temp_p,temp_s,p=1))
+                dis[i,j]=torch.exp(torch.nn.functional.cosine_similarity(temp_p,temp_s))
                 
         sum_dis=torch.sum(dis,1)
         prototypes_dis=torch.zeros(prototypes_unnorm.size(),device=self.args.devices[0])
