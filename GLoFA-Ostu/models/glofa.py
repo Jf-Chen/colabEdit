@@ -87,13 +87,14 @@ class MyModel(nn.Module):
             #(1 + mask_task * alpha_task) * (1 + mask_class * alpha_class) # torch.Size([5, 5, 640])
         masked_support_embeddings = support_embeddings.view(self.args.K, self.args.N, -1)
         prototypes_unnorm = torch.mean(masked_support_embeddings.view(self.args.K, self.args.N, -1), dim=0) # torch.Size([5, 640])
+        epsilon=1;
         # 视余弦距离不同而加权
         dis=torch.zeros(self.args.N,self.args.K,device=self.args.devices[0])
         for i in range(masked_support_embeddings.size()[0]): #0~5
             temp_p=prototypes_unnorm[i,:]
             for j in  range(masked_support_embeddings.size()[1]): #0~5
                 temp_s=masked_support_embeddings[i,j,:]
-                dis[i,j]=torch.dist(temp_p,temp_s,p=1)
+                dis[i,j]=torch.exp(torch.cosine_similarity(temp_p,temp_s,p=1))
                 
         sum_dis=torch.sum(dis,1)
         prototypes_dis=torch.zeros(prototypes_unnorm.size(),device=self.args.devices[0])

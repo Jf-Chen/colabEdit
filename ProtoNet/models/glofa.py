@@ -88,7 +88,7 @@ class MyModel(nn.Module):
         masked_query_embeddings = query_embeddings.unsqueeze(0).expand(self.args.N, -1, -1)
 
         #logits ->torch.Size([5, 75, 5] torch.bmm:两矩阵相乘 tensor.t():矩阵转置
-        logits = torch.bmm(masked_query_embeddings, prototypes.t().unsqueeze(0).expand(self.args.N, -1, -1)) / self.args.tau )
+        logits = torch.bmm(masked_query_embeddings, prototypes.t().unsqueeze(0).expand(self.args.N, -1, -1)) / self.args.tau 
         x = torch.arange(self.args.N).long().cuda(self.args.devices[0]) # torch.Size([5])
         collapsed_logits = logits[x, :, x].t() # torch.Size([75, 5])
 
