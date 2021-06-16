@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # task arguments
     parser.add_argument('--data_name', type=str, default='mini_imagenet', choices=['mini_imagenet'])
     parser.add_argument('--network_name', type=str, default='resnet', choices=['resnet'])
-    parser.add_argument('--model_name', type=str, default='glofa', choices=['glofa'])
+    parser.add_argument('--model_name', type=str, default='protonet', choices=['glofa'])
     parser.add_argument('--N', type=int, default=5)
     parser.add_argument('--K', type=int, default=1)
     parser.add_argument('--Q', type=int, default=15)
