@@ -242,7 +242,7 @@ if __name__ == '__main__':
     best_prec1_test = 0
     epoch_index = 0
 
-    FewShotNet = model_dict[opt.method_name]
+    FewShotNet = model_dict[opt.method_name] # network_M2L_Wass
     model = FewShotNet.define_FewShotNet(which_model=opt.basemodel, num_classes=opt.way_num, neighbor_k=opt.neighbor_k,
                                          norm='batch',
                                          shot_num=opt.shot_num, batch_size=opt.episodeSize, init_type='normal',
