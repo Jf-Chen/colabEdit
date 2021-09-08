@@ -13,7 +13,8 @@ from Models.models.Network import DeepEMD
 from Models.utils import *
 from Models.dataloader.data_utils import *
 
-DATA_DIR='your/default/dataset/dir'
+# DATA_DIR='your/default/dataset/dir'
+DATA_DIR='/content/run/colabEdit/DeepEMD/datasets'
 # DATA_DIR='/home/zhangchi/dataset'
 
 parser = argparse.ArgumentParser()
@@ -42,7 +43,7 @@ parser.add_argument('-deepemd', type=str, default='fcn', choices=['fcn', 'grid',
 parser.add_argument('-feature_pyramid', type=str, default=None)
 parser.add_argument('-solver', type=str, default='opencv', choices=['opencv'])
 # about training
-parser.add_argument('-gpu', default='0,1')
+parser.add_argument('-gpu', default='0')# colab上只有一个gpu
 parser.add_argument('-seed', type=int, default=1)
 parser.add_argument('-extra_dir', type=str,default=None,help='extra information that is added to checkpoint dir, e.g. hyperparameters')
 
@@ -62,20 +63,20 @@ ensure_path(args.save_path)
 
 args.dir = 'pretrained_model/miniimagenet/max_acc.pth'
 
-Dataset=set_up_datasets(args)
+Dataset=set_up_datasets(args) # from Models.dataloader.miniimagenet.fcn.mini_imagenet import MiniImageNet as Dataset
 trainset = Dataset('train', args)
-train_loader = DataLoader(dataset=trainset, batch_size=args.bs, shuffle=True, num_workers=8, pin_memory=True)
+train_loader = DataLoader(dataset=trainset, batch_size=args.bs, shuffle=True, num_workers=2, pin_memory=True)
 
 valset = Dataset(args.set, args)
 val_sampler = CategoriesSampler(valset.label, args.num_episode, args.way, args.shot + args.query)
-val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler, num_workers=8, pin_memory=True)
+val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler, num_workers=2, pin_memory=True)
 if not args.random_val_task:
     print('fix val set for all epochs')
     val_loader = [x for x in val_loader]
 print('save all checkpoint models:', (args.save_all is True))
 
 model = DeepEMD(args, mode='pre_train')
-model = nn.DataParallel(model, list(range(num_gpu)))
+model = nn.DataParallel(model, list(range(num_gpu))) # 加速，但只有一块gpu
 model = model.cuda()
 
 # label of query images.
@@ -93,6 +94,8 @@ def save_model(name):
     torch.save(dict(params=model.module.encoder.state_dict()), osp.join(args.save_path, name + '.pth'))
 
 
+#===========以上都可以顺利执行==========================#
+
 trlog = {}
 trlog['args'] = vars(args)
 trlog['train_loss'] = []
@@ -109,9 +112,9 @@ result_list = [args.save_path]
 for epoch in range(1, args.max_epoch + 1):
     print(args.save_path)
     start_time = time.time()
-    model = model.train()
-    model.module.mode = 'pre_train'
-    tl = Averager()
+    model = model.train() # 设为训练模式，告诉模型正在训练，有别测试model.eval()
+    model.module.mode = 'pre_train' # 可打印model和model.module看看
+    tl = Averager() # 具备属性n,v,作用还不知道
     ta = Averager()
     #standard classification for pretrain
     tqdm_gen = tqdm.tqdm(train_loader)
@@ -141,7 +144,7 @@ for epoch in range(1, args.max_epoch + 1):
     vl = Averager()
     va = Averager()
     #use deepemd fcn for validation
-    with torch.no_grad():
+    with torch.no_grad(): # with中得到的新变量，其不会自动求导，优先级更高，即使require_grid=true
         tqdm_gen = tqdm.tqdm(val_loader)
         for i, batch in enumerate(tqdm_gen, 1):
 
@@ -149,7 +152,7 @@ for epoch in range(1, args.max_epoch + 1):
             k = args.way * args.shot
             #encoder data by encoder
             model.module.mode = 'encoder'
-            data = model(data)
+            data = model(data) #[80,3,84,84]
             data_shot, data_query = data[:k], data[k:]
             #episode learning
             model.module.mode = 'meta'

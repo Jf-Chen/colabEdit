@@ -16,7 +16,7 @@ class DeepEMD(nn.Module):
         self.encoder = ResNet(args=args)
 
         if self.mode == 'pre_train':
-            self.fc = nn.Linear(640, self.args.num_class)
+            self.fc = nn.Linear(640, self.args.num_class) #(640,64)
 
     def forward(self, input):
         if self.mode == 'meta':

@@ -1,0 +1,15 @@
+!pip install qpth
+%cd /content
+!pwd
+!mkdir /content/run
+%cd /content/run
+# 下载代码
+!git clone https://github.com/Jf-Chen/colabEdit.git
+%cd /content/run/colabEdit/DeepEMD
+%cd /content/run/colabEdit/DeepEMD/datasets
+# 下载 miniimagenet.tar
+!gdown --id 191cFzwwNTzG_mHUDABF0Nh77cI6pa-qq
+# 解压
+!tar -xf miniimagenet.tar miniimagenet/
+%cd /content/run/colabEdit/DeepEMD
+!pwd
