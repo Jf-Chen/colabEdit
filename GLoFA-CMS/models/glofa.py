@@ -89,7 +89,7 @@ class MyModel(nn.Module):
         #--- 先去掉mask，只使用原始的prototype,看看准确率，然后加入CMS，看看如何使用CMS----#
         
         #logits ->torch.Size([5, 75, 5] torch.bmm:两矩阵相乘 tensor.t():矩阵转置
-        logits = torch.bmm(masked_query_embeddings, prototypes.t().unsqueeze(0).expand(self.args.N, -1, -1)) / self.args.tau )
+        logits = torch.bmm(masked_query_embeddings, prototypes.t().unsqueeze(0).expand(self.args.N, -1, -1)) / self.args.tau  )
         x = torch.arange(self.args.N).long().cuda(self.args.devices[0]) # torch.Size([5])
         collapsed_logits = logits[x, :, x].t() # torch.Size([75, 5])
 
