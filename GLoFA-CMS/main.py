@@ -59,6 +59,7 @@ if __name__ == '__main__':
     # create a parser
     parser = argparse.ArgumentParser()
     # task arguments
+    parser.add_argument('--data_dir', type=str, default='/content/colabEdit/GLoFA-CMS/datasets')
     parser.add_argument('--data_name', type=str, default='mini_imagenet', choices=['mini_imagenet'])
     parser.add_argument('--network_name', type=str, default='resnet', choices=['resnet'])
     parser.add_argument('--model_name', type=str, default='glofa', choices=['glofa'])
@@ -89,7 +90,7 @@ if __name__ == '__main__':
 
     display_args(args)
 
-    data_path = '/content/run/' + args.data_name + '/'
+    data_path = args.data_dir + args.data_name + '/'
 
     # import modules
     Data = importlib.import_module('dataloaders.' + args.data_name)
