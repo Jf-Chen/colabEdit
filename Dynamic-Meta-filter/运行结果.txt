@@ -1,0 +1,5 @@
+pip install -r requirements.txt 成功了
+python setup.py develop build 失败了
+似乎是cuda版本不同，但colab不可降级cuda
+https://gist.github.com/justamanm/d2eabf8b1f51c2465fe1dad82deb62e4 
+上述连接似乎可以降级，但需要提前下载好cuda.deb文件
