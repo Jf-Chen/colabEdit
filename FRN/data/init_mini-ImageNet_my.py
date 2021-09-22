@@ -18,9 +18,10 @@ data_path = os.path.abspath(config['data_path'])
 
 split = ['train','val','test']
 image_folder = os.path.join(data_path,'images/')
+print("image_folder :",image_folder)
 csv_folder = os.path.abspath('./mini-ImageNet_split/')
 # 就是mini_ImageNet的images应该被下载到target_folder中
-target_folder = os.path.join(data_path,'mini-ImageNet') # /content/colabEdit/FRN/data_path/mini-ImageNet
+target_folder = os.path.join(data_path,'mini-ImageNet') # /content/colabEdit/FRN/data/mini-ImageNet
 util.mkdir(target_folder)
 
 cat_list = []
