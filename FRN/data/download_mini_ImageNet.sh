@@ -26,10 +26,11 @@ cd $data_path
 # train.rar https://drive.google.com/file/d/107FTosYIeBn5QbynR46YG91nHcJ70whs/view?usp=sharing
 # val.rar https://drive.google.com/file/d/1hSMUMj5IRpf-nQs1OwgiQLmGZCN0KDWl/view?usp=sharing
 echo "downloading images for mini-ImageNet..." 
-gdownload 1yKyKgxcnGMIAnA_6Vr2ilbpHMc9COg-v test.rar
+gdownload 1yKyKgxcnGMIAnA_6Vr2ilbpHMc9COg-v test.tar
 if [ ! -d "images" ]
 then
 	mkdir images
+	echo "create dir images success" 
 fi
 cd images
-unrar e test.rar
+tar -zxvf test.tar --strip-compontents 1
