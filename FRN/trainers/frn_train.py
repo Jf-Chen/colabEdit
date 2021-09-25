@@ -93,6 +93,7 @@ def pre_train(train_loader,model,optimizer,writer,iter_counter):
 
     for i, (inp,target) in enumerate(train_loader):
 
+        # inp,torch.Size([128, 3, 84, 84])  target,torch.Size([128])
         iter_counter += 1
         batch_size = target.size(0)
         target = target.cuda()

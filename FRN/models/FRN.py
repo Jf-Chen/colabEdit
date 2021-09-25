@@ -124,6 +124,7 @@ class FRN(nn.Module):
         return max_index
     
 
+    # 在frn_train中调用该函数，inp是train_loader的参数
     def forward_pretrain(self,inp):
 
         feature_map = self.get_feature_map(inp)

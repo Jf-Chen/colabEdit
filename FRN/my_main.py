@@ -5,7 +5,7 @@ import torch
 import yaml
 import argparse
 from functools import partial
-#from trainers import trainer, frn_train
+from trainers import trainer, frn_train
 #from datasets import dataloaders
 #from models.FRN import FRN
 
@@ -43,7 +43,8 @@ args = parser.parse_args(args=[])
 
 args.opt='sgd'
 args.lr=1e-1
-args.gamma=350
+args.gamma=1e-1
+args.epoch=350
 args.decay_epoch=200,300
 
 args.batch_size=128
@@ -64,6 +65,8 @@ data_path = os.path.abspath(temp['data_path'])#
 fewshot_path = os.path.join(data_path,'mini-ImageNet')
 
 pm = trainer.Path_Manager(fewshot_path=fewshot_path,args=args)
+
+
 train_loader = dataloaders.normal_train_dataloader(data_path=pm.train,
                                                 batch_size=args.batch_size,
                                                 transform_type=args.train_transform_type)
@@ -73,11 +76,112 @@ model = FRN(is_pretraining=True,
             num_cat=num_cat,
             resnet=args.resnet)
 
-train_func = partial(frn_train.pre_train,train_loader=train_loader)
+# 固定frn_train.pre_train的传入参数train_loader
+train_func = partial(frn_train.pre_train,train_loader=train_loader) 
 
+"""
 tm = trainer.Train_Manager(args,path_manager=pm,train_func=train_func)
 
+tm.train(model)
+
+tm.evaluate(model)
+
 print(tm)
+"""
+# --------------看看trainer.py的train干了什么
+#    def train(self,model):
+
+args = tm.args
+train_func = tm.train_func
+writer = tm.writer
+save_path = tm.save_path
+logger = tm.logger
+
+def get_opt(model,args):
+
+    if args.opt == 'adam':
+        optimizer = optim.Adam(model.parameters(),lr=args.lr,weight_decay=args.weight_decay)
+    elif args.opt == 'sgd':
+        optimizer = optim.SGD(model.parameters(),lr=args.lr,momentum=0.9,weight_decay=args.weight_decay,nesterov=args.nesterov)
+
+    if args.decay_epoch is not None:
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer,milestones=args.decay_epoch,gamma=args.gamma)
+
+    else:
+        scheduler = optim.lr_scheduler.StepLR(optimizer,step_size=args.epoch,gamma=args.gamma)
+
+    return optimizer,scheduler
+
+optimizer,scheduler = get_opt(model,args)
+
+val_shot = args.train_shot
+test_way = args.test_way
+
+best_val_acc = 0
+best_epoch = 0
+
+model.train()
+model.cuda()
+
+iter_counter = 0
+
+if args.decay_epoch is not None:
+    total_epoch = args.epoch
+else:
+    total_epoch = args.epoch*args.stage
+
+logger.info("start training!")
+
+for e in tqdm(range(total_epoch)): # 默认从0开始
+    if(e==1):
+        break
+
+    iter_counter,train_acc = train_func(model=model,
+                                        optimizer=optimizer,
+                                        writer=writer,
+                                        iter_counter=iter_counter)
+
+    if (e+1)%args.val_epoch==0:
+
+        logger.info("")
+        logger.info("epoch %d/%d, iter %d:" % (e+1,total_epoch,iter_counter))
+        logger.info("train_acc: %.3f" % (train_acc))
+
+        model.eval()
+        with torch.no_grad():
+            val_acc,val_interval = meta_test(data_path=self.pm.val,
+                                            model=model,
+                                            way=test_way,
+                                            shot=val_shot,
+                                            pre=args.pre,
+                                            transform_type=args.test_transform_type,
+                                            query_shot=args.test_query_shot,
+                                            trial=args.val_trial)
+            writer.add_scalar('val_%d-way-%d-shot_acc'%(test_way,val_shot),val_acc,iter_counter)
+
+        logger.info('val_%d-way-%d-shot_acc: %.3f\t%.3f'%(test_way,val_shot,val_acc,val_interval))
+
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            best_epoch = e+1
+            if not args.no_val:
+                torch.save(model.state_dict(),save_path)
+            logger.info('BEST!')
+
+        model.train()
+
+    scheduler.step()
+
+logger.info('training finished!')
+if args.no_val:
+    torch.save(model.state_dict(),save_path)
+
+logger.info('------------------------')
+logger.info(('the best epoch is %d/%d') % (best_epoch,total_epoch))
+logger.info(('the best %d-way %d-shot val acc is %.3f') % (test_way,val_shot,best_val_acc))
+
+
+
 """
 print("data_pat",data_path)
 print("fewshot_path",fewshot_path)
