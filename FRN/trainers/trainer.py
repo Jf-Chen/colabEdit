@@ -103,6 +103,8 @@ class Path_Manager:
 
 
 class Train_Manager:
+    # train_func = partial(frn_train.pre_train,train_loader=train_loader)
+    # tm = trainer.Train_Manager(args,path_manager=pm,train_func=train_func)
 
     def __init__(self,args,path_manager,train_func):
 

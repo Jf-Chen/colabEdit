@@ -15,5 +15,6 @@
 !pwd
 %cd /content/colabEdit/FRN/data
 !python /content/colabEdit/FRN/data/init_mini-ImageNet_my.py
+# 到这一步数据预处理完成，得到了/content/colabEdit/FRN/data/mini-ImageNet
 ~~~
 

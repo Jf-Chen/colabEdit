@@ -38,7 +38,7 @@ class FRN(nn.Module):
 
         if is_pretraining:
             # number of categories during pre-training
-            self.num_cat = num_cat
+            self.num_cat = num_cat # 64
             # category matrix, correspond to matrix M of section 3.6 in the paper
             self.cat_mat = nn.Parameter(torch.randn(self.num_cat,self.resolution,self.d),requires_grad=True)   
     

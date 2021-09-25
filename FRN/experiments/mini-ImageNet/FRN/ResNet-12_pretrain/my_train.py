@@ -31,6 +31,18 @@ train_func = partial(frn_train.pre_train,train_loader=train_loader)
 
 tm = trainer.Train_Manager(args,path_manager=pm,train_func=train_func)
 
+'''
 tm.train(model)
 
 tm.evaluate(model)
+'''
+
+print("num_cat:",num_cat)
+print("model.resolution:",model.resolution)
+
+"""
+调试时使用
+%cd /content/colabEdit/FRN/experiments/mini-ImageNet/FRN/ResNet-12_pretrain
+!python  my_train.py --opt sgd --lr 1e-1 --gamma 1e-1 --epoch 350 --decay_epoch 200 300 --batch_size 128 --val_epoch 25 --weight_decay 5e-4 --nesterov --train_transform_type 0 --resnet --train_shot 1 --test_shot 1 5 --pre --gpu 0
+
+"""
