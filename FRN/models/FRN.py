@@ -126,14 +126,25 @@ class FRN(nn.Module):
 
     # 在frn_train中调用该函数，inp是train_loader的参数
     def forward_pretrain(self,inp):
-
+    
+        logger.info("inp.size(): ")
+        logger.info(inp.size())
+        
         feature_map = self.get_feature_map(inp)
         batch_size = feature_map.size(0)
+        
+        logger.info("feature_map.size()")
+        logger.info(feature_map.size())
 
         feature_map = feature_map.view(batch_size*self.resolution,self.d)
         
+        logger.info("feature_map.size()")
+        logger.info(feature_map.size())
+        
         alpha = self.r[0]
         beta = self.r[1]
+        print("alpha",alpha)
+        print("beta",beta)
         
         recon_dist = self.get_recon_dist(query=feature_map,support=self.cat_mat,alpha=alpha,beta=beta) # way*query_shot*resolution, way
 
@@ -141,7 +152,12 @@ class FRN(nn.Module):
         
         logits = neg_l2_dist*self.scale
         log_prediction = F.log_softmax(logits,dim=1)
-
+        
+        logger.info("recon_dist.size():")
+        logger.info(recon_dist.size())
+        logger.info("neg_l2_dist:")
+        logger.info(neg_l2_dist.size())
+        
         return log_prediction
 
 
