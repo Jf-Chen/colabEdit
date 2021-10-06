@@ -126,37 +126,31 @@ class FRN(nn.Module):
 
     # 在frn_train中调用该函数，inp是train_loader的参数
     def forward_pretrain(self,inp):
-    
-        logger.info("inp.size(): ")
-        logger.info(inp.size())
         
-        feature_map = self.get_feature_map(inp)
+        # inp.size():  torch.Size([128, 3, 84, 84])
+        
+        feature_map = self.get_feature_map(inp) #feature_map.size() torch.Size([128, 25, 640]) # N,HW,C
         batch_size = feature_map.size(0)
         
-        logger.info("feature_map.size()")
-        logger.info(feature_map.size())
-
-        feature_map = feature_map.view(batch_size*self.resolution,self.d)
         
-        logger.info("feature_map.size()")
-        logger.info(feature_map.size())
         
-        alpha = self.r[0]
-        beta = self.r[1]
-        print("alpha",alpha)
-        print("beta",beta)
+        feature_map = feature_map.view(batch_size*self.resolution,self.d) # torch.Size([3200, 640])
         
+        
+        
+        alpha = self.r[0] #初始化是0
+        beta = self.r[1] # 0
+        
+        #recon_dist.size(): torch.Size([3200, 64])
         recon_dist = self.get_recon_dist(query=feature_map,support=self.cat_mat,alpha=alpha,beta=beta) # way*query_shot*resolution, way
-
+        
+        # neg_l2_dist: torch.Size([128, 64])
         neg_l2_dist = recon_dist.neg().view(batch_size,self.resolution,self.num_cat).mean(1) # batch_size,num_cat
         
-        logits = neg_l2_dist*self.scale
-        log_prediction = F.log_softmax(logits,dim=1)
+        logits = neg_l2_dist*self.scale # logits: torch.Size([128, 64])
+        log_prediction = F.log_softmax(logits,dim=1) #log_prediction: torch.Size([128, 64])
         
-        logger.info("recon_dist.size():")
-        logger.info(recon_dist.size())
-        logger.info("neg_l2_dist:")
-        logger.info(neg_l2_dist.size())
+        
         
         return log_prediction
 
