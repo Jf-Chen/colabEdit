@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from .backbones import Conv_4,ResNet
+import ipdb
 
 
 class FRN(nn.Module):
@@ -38,7 +39,7 @@ class FRN(nn.Module):
 
         if is_pretraining:
             # number of categories during pre-training
-            self.num_cat = num_cat # 64
+            self.num_cat = num_cat
             # category matrix, correspond to matrix M of section 3.6 in the paper
             self.cat_mat = nn.Parameter(torch.randn(self.num_cat,self.resolution,self.d),requires_grad=True)   
     
@@ -102,7 +103,10 @@ class FRN(nn.Module):
 
         support = feature_map[:way*shot].view(way, shot*resolution , d)
         query = feature_map[way*shot:].view(way*query_shot*resolution, d)
-
+        
+        # 打个断点，在这里插入glofa
+        ipdb.set_trace()
+        
         recon_dist = self.get_recon_dist(query=query,support=support,alpha=alpha,beta=beta) # way*query_shot*resolution, way
         neg_l2_dist = recon_dist.neg().view(way*query_shot,resolution,way).mean(1) # way*query_shot, way
         
@@ -124,34 +128,23 @@ class FRN(nn.Module):
         return max_index
     
 
-    # 在frn_train中调用该函数，inp是train_loader的参数
     def forward_pretrain(self,inp):
-        
-        # inp.size():  torch.Size([128, 3, 84, 84])
-        
-        feature_map = self.get_feature_map(inp) #feature_map.size() torch.Size([128, 25, 640]) # N,HW,C
+
+        feature_map = self.get_feature_map(inp)
         batch_size = feature_map.size(0)
+
+        feature_map = feature_map.view(batch_size*self.resolution,self.d)
         
+        alpha = self.r[0]
+        beta = self.r[1]
         
-        
-        feature_map = feature_map.view(batch_size*self.resolution,self.d) # torch.Size([3200, 640])
-        
-        
-        
-        alpha = self.r[0] #初始化是0
-        beta = self.r[1] # 0
-        
-        #recon_dist.size(): torch.Size([3200, 64])
         recon_dist = self.get_recon_dist(query=feature_map,support=self.cat_mat,alpha=alpha,beta=beta) # way*query_shot*resolution, way
-        
-        # neg_l2_dist: torch.Size([128, 64])
+
         neg_l2_dist = recon_dist.neg().view(batch_size,self.resolution,self.num_cat).mean(1) # batch_size,num_cat
         
-        logits = neg_l2_dist*self.scale # logits: torch.Size([128, 64])
-        log_prediction = F.log_softmax(logits,dim=1) #log_prediction: torch.Size([128, 64])
-        
-        
-        
+        logits = neg_l2_dist*self.scale
+        log_prediction = F.log_softmax(logits,dim=1)
+
         return log_prediction
 
 
@@ -162,6 +155,7 @@ class FRN(nn.Module):
                                                     shot=self.shots[0],
                                                     query_shot=self.shots[1],
                                                     return_support=True)
+        ipdb.set_trace(context=40) 
             
         logits = neg_l2_dist*self.scale
         log_prediction = F.log_softmax(logits,dim=1)
