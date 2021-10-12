@@ -6,7 +6,7 @@ from functools import partial
 sys.path.append('../../../../')
 from trainers import trainer, frn_train
 from datasets import dataloaders
-from models.FRN import FRN
+from models.FRN_patch_my import FRN
 from utils import util
 
 

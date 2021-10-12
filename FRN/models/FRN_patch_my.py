@@ -101,7 +101,10 @@ class FRN(nn.Module):
         d = self.d
         alpha = self.r[0]
         beta = self.r[1]
-
+        
+        # inp [100, 3, 84, 84]
+        # inp_patchs=
+        #
         feature_map = self.get_feature_map(inp)
 
         support = feature_map[:way*shot].view(way, shot*resolution , d)

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from .backbones import Conv_4,ResNet
 import ipdb
+from senet.se_module import SELayer
 
 
 class FRN(nn.Module):
@@ -44,7 +45,8 @@ class FRN(nn.Module):
             self.cat_mat = nn.Parameter(torch.randn(self.num_cat,self.resolution,self.d),requires_grad=True)  
 
         #---------插入senet，更改了网络，需要重新进行预训练---------
-        
+        if is_se :
+            self.se = SELayer(self.channels, reduction=16) # 怎么实现SE
     
 
     def get_feature_map(self,inp):
@@ -110,7 +112,12 @@ class FRN(nn.Module):
         # 打个断点，在这里插入glofa
         # ipdb.set_trace(context=40)
         #---------插入SENet-------------------#
+        # 首先将query还原成[way, shot*resolution , d]的形式
         
+        if(self.is_se):
+            # 首先,将support改成[way,shot,resolution,d],resolution是通道,
+            support_se=self.se(support)
+            query_se=self.se(query)
         #----------end-----------------------------#
         
         recon_dist = self.get_recon_dist(query=query,support=support,alpha=alpha,beta=beta) # way*query_shot*resolution, way
