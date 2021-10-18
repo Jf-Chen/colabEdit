@@ -14,6 +14,7 @@ class SetFunction(nn.Module):
     def __init__(self, args, input_dimension, output_dimension):
         super(SetFunction, self).__init__()# nn.Module.__init()__
         self.args = args
+        
         self.input_dimension = input_dimension
         self.output_dimension = output_dimension
 
@@ -52,14 +53,19 @@ class SetFunction(nn.Module):
             rho_input = torch.cat([psi_output, support_embeddings], dim=1)
             rho_input = torch.sum(rho_input, dim=0, keepdim=True)
             # rho_output = F.relu6(self.rho(rho_input)) / 6 * self.args.delta
-            rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6 * self.args.delta
+            
+            #--------暂时去掉delta--------#
+                    # rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6 * self.args.delta
+            rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6
+            #------------end-----------#
             
             return rho_output
         elif level == 'class':
             psi_output = self.psi(support_embeddings)
             rho_input = torch.cat([psi_output, support_embeddings], dim=1)
-            rho_input = torch.sum(rho_input.view(self.args.K, self.args.N, -1), dim=0)
-            rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6 * self.args.delta
+            rho_input = torch.sum(rho_input.view(self.args.K, self.args.N, -1), dim=1)
+            # rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6 * self.args.delta
+            rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6 
             return rho_output
         elif level == 'balance':
             psi_output = self.psi(support_embeddings)
