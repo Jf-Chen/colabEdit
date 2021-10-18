@@ -11,11 +11,13 @@ from torch.nn import functional as F
 
 # 看作是MLP
 class SetFunction(nn.Module):
-    def __init__(self, train_way,train_shot, input_dimension, output_dimension):
+    def __init__(self, train_way,train_shot, resolution,input_dimension, output_dimension):
         super(SetFunction, self).__init__()# nn.Module.__init()__
         
+        self.resolution=resolution
         self.train_way=train_way
         self.train_shot=train_shot
+        self.resolution=resolution
         self.input_dimension = input_dimension
         self.output_dimension = output_dimension
 
@@ -47,7 +49,7 @@ class SetFunction(nn.Module):
         elif level == 'class':
             psi_output = self.psi(support_embeddings)
             rho_input = torch.cat([psi_output, support_embeddings], dim=2)
-            rho_input = rho_input.view(self.train_way, self.train_shot,resolution, -1)
+            rho_input = rho_input.view(self.train_way, self.train_shot,self.resolution, -1)
             rho_input = torch.sum(rho_input, dim=1)
             
             rho_output = torch.nn.functional.relu6(self.rho(rho_input)) / 6 

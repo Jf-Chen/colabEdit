@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from .backbones import Conv_4,ResNet
-from set_function import SetFunction
+from models.set_function import SetFunction
 
 
 class FRN(nn.Module):
@@ -163,7 +163,7 @@ class FRN(nn.Module):
         train_way=way
         train_shot=shot
         support_embeddings = feature_map[:train_way*train_shot] # [25,25,640]
-        query_embeddings = embeddings[train_way*train_shot:] # [75,25,640]
+        query_embeddings = feature_map[train_way*train_shot:] # [75,25,640]
         mask_task=self.f_task(support_embeddings,level='task')
         mask_class=self.f_class(support_embeddings, level='class')
         masked_support_embeddings = support.view(train_way,train_shot, resolution,-1) * \
