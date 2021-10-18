@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from .backbones import Conv_4,ResNet
 from models.set_function import SetFunction
+import ipdb
 
 
 class FRN(nn.Module):
@@ -155,7 +156,9 @@ class FRN(nn.Module):
         beta = self.r[1]
 
         feature_map = self.get_feature_map(inp) # [100, 25, 640]
-
+        
+        ipdb.set_trace(context=5)
+        
         # support = feature_map[:way*shot].view(way, shot*resolution , d) #[5, 125, 640]
         # query = feature_map[way*shot:].view(way*query_shot*resolution, d) #[1875, 640]
         
