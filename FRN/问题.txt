@@ -1,0 +1,29 @@
+10/18 06:39:33] detailed_name: False
+[10/18 06:39:33] ------------------------
+[10/18 06:39:33] start training!
+not loaded optimizer
+  0%|          | 0/150 [00:00<?, ?it/s]/usr/local/lib/python3.7/dist-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  /pytorch/c10/core/TensorImpl.h:1156.)
+  return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
+  3%|▎         | 4/150 [08:14<5:00:28, 123.48s/it][10/18 06:49:51] 
+[10/18 06:49:51] epoch 5/150, iter 2559:
+[10/18 06:49:51] train_acc: 42.418
+
+0it [00:00, ?it/s]
+1it [00:00,  2.41it/s]
+2it [00:00,  3.75it/s]
+3it [00:00,  4.37it/s]
+
+
+998it [02:45,  6.09it/s]
+999it [02:46,  6.11it/s]
+1000it [02:46,  6.01it/s]
+[10/18 07:05:38] val_5-way-5-shot_acc: 46.977	0.529
+[10/18 07:05:38] BEST!
+  7%|▋         | 10/150 [26:04<7:08:40, 183.72s/it]
+  
+  
+
+找到 0it [00:00, ?it/s] 出现的位置
+
+
+问题：一个随机梯度下降求解的线性回归，已经确认是可收敛的，是否会随着参数数量增加而加快收敛？

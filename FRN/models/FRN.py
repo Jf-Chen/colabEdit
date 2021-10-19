@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from .backbones import Conv_4,ResNet
 from models.set_function import SetFunction
-import ipdb
+# import ipdb
 
 
 class FRN(nn.Module):
@@ -40,8 +40,8 @@ class FRN(nn.Module):
         self.r = nn.Parameter(torch.zeros(2),requires_grad=not is_pretraining)
         #----------改成glofa形式---------
         dimension=640
-        self.f_task = SetFunction(train_way=way,train_shot=shots[0], input_dimension=dimension, output_dimension=dimension)
-        self.f_class = SetFunction(train_way=way,train_shot=shots[0], input_dimension=dimension, output_dimension=dimension)
+        self.f_task = SetFunction(train_way=way,train_shot=shots[0], input_dimension=dimension, output_dimension=dimension,resolution=self.resolution)
+        self.f_class = SetFunction(train_way=way,train_shot=shots[0], input_dimension=dimension, output_dimension=dimension,resolution=self.resolution)
         
         #------------end----------------
         
@@ -157,7 +157,7 @@ class FRN(nn.Module):
 
         feature_map = self.get_feature_map(inp) # [100, 25, 640]
         
-        ipdb.set_trace(context=5)
+        # ipdb.set_trace(context=5)
         
         # support = feature_map[:way*shot].view(way, shot*resolution , d) #[5, 125, 640]
         # query = feature_map[way*shot:].view(way*query_shot*resolution, d) #[1875, 640]
@@ -169,10 +169,20 @@ class FRN(nn.Module):
         query_embeddings = feature_map[train_way*train_shot:] # [75,25,640]
         mask_task=self.f_task(support_embeddings,level='task')
         mask_class=self.f_class(support_embeddings, level='class')
-        masked_support_embeddings = support.view(train_way,train_shot, resolution,-1) * \
+        
+        # ipdb.set_trace(context=5)
+        # print("train_way: ",train_way,"train_shot",train_shot,"support_embeddings: ",support_embeddings.size(),"query_embeddings:",query_embeddings.size(),"mask_task:",mask_task.size(),"mask_class:",mask_class.size())
+        # inp [75,3,84,84]
+        # train_way:  5 train_shot 5 
+        # support_embeddings:  torch.Size([25, 25, 640]) 
+        # query_embeddings: torch.Size([50, 25, 640]) 
+        # mask_task: torch.Size([1, 25, 640]) 
+        # mask_class: torch.Size([5, 25, 640])
+        
+        masked_support_embeddings = support_embeddings.view(train_way,train_shot, resolution,-1) * \
             (1 + mask_task ) * (1 + mask_class )# [5, 5, 25, 640]
-        masked_query_embeddings =query.unsqueeze(0).expand(train_way, -1, -1,-1) * \
-            (1 + mask_task) * (1 + mask_class.transpose(0, 1) ) # [5, 75, 25, 640]
+        masked_query_embeddings =query_embeddings.unsqueeze(0).expand(train_way, -1, -1,-1) * \
+            (1 + mask_task) * (1 + mask_class.unsqueeze(0).transpose(0, 1) ) # [5, 75, 25, 640]
         
         support=masked_support_embeddings.view(train_way,train_shot*resolution,-1) # [5,125,640]
         query=masked_query_embeddings.view(train_way,-1,d) # [5,1875,640]
@@ -184,9 +194,10 @@ class FRN(nn.Module):
             recon_dist = self.get_recon_dist_glofa(query=masked_query_embeddings,support=masked_support_embeddings,alpha=alpha,beta=beta) # 这可能影响r的迭代
         """
         
+        # ipdb.set_trace(context=5)
         
         #----------end-----------------------------#
-        recon_dist = self.get_recon_dist_glofa(query=masked_query_embeddings,support=masked_support_embeddings,alpha=alpha,beta=beta) # [3750, 10]
+        recon_dist = self.get_recon_dist_glofa(query=query,support=support,alpha=alpha,beta=beta) # [3750, 10]
         neg_l2_dist = recon_dist.neg().view(way*query_shot,resolution,way).mean(1) # [150, 10]
         """
         recon_dist = self.get_recon_dist_glofa(query=query,support=support,alpha=alpha,beta=beta) # way*query_shot*resolution, way # [3750, 10]
@@ -245,7 +256,7 @@ class FRN(nn.Module):
                                                     shot=self.shots[0],
                                                     query_shot=self.shots[1],
                                                     return_support=True)
-        ipdb.set_trace(context=40) 
+        # ipdb.set_trace(context=40) 
             
         logits = neg_l2_dist*self.scale
         log_prediction = F.log_softmax(logits,dim=1)
