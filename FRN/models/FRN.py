@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from .backbones import Conv_4,ResNet
 from models.set_function import SetFunction
-# import ipdb
+
 
 
 class FRN(nn.Module):
@@ -157,7 +157,7 @@ class FRN(nn.Module):
 
         feature_map = self.get_feature_map(inp) # [100, 25, 640]
         
-        # ipdb.set_trace(context=5)
+        
         
         # support = feature_map[:way*shot].view(way, shot*resolution , d) #[5, 125, 640]
         # query = feature_map[way*shot:].view(way*query_shot*resolution, d) #[1875, 640]
@@ -170,7 +170,7 @@ class FRN(nn.Module):
         mask_task=self.f_task(support_embeddings,level='task')
         mask_class=self.f_class(support_embeddings, level='class')
         
-        # ipdb.set_trace(context=5)
+        
         # print("train_way: ",train_way,"train_shot",train_shot,"support_embeddings: ",support_embeddings.size(),"query_embeddings:",query_embeddings.size(),"mask_task:",mask_task.size(),"mask_class:",mask_class.size())
         # inp [75,3,84,84]
         # train_way:  5 train_shot 5 
@@ -194,7 +194,7 @@ class FRN(nn.Module):
             recon_dist = self.get_recon_dist_glofa(query=masked_query_embeddings,support=masked_support_embeddings,alpha=alpha,beta=beta) # 这可能影响r的迭代
         """
         
-        # ipdb.set_trace(context=5)
+        
         
         #----------end-----------------------------#
         recon_dist = self.get_recon_dist_glofa(query=query,support=support,alpha=alpha,beta=beta) # [3750, 10]
@@ -256,7 +256,7 @@ class FRN(nn.Module):
                                                     shot=self.shots[0],
                                                     query_shot=self.shots[1],
                                                     return_support=True)
-        # ipdb.set_trace(context=40) 
+        
             
         logits = neg_l2_dist*self.scale
         log_prediction = F.log_softmax(logits,dim=1)

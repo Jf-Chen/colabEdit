@@ -1,0 +1,31 @@
+
+# 保存网络中的参数, 速度快，占空间少
+torch.save(net.state_dict(),PATH)
+
+#针对上面一般的保存方法，加载的方法分别是：
+model_dict=model.load_state_dict(torch.load(PATH))
+
+#Save on GPU, Load on GPU
+device = torch.device("cuda")
+model = TheModelClass(*args, **kwargs)
+model.load_state_dict(torch.load(PATH))
+model.to(device)
+
+#Save on GPU, Load on GPU
+device = torch.device("cpu")
+model = TheModelClass(*args, **kwargs)
+model.load_state_dict(torch.load(PATH))
+model.to(device)
+
+
+torch.save({'epoch': epochID + 1, 'state_dict': model.state_dict(), 'best_loss': lossMIN,
+                            'optimizer': optimizer.state_dict(),'alpha': loss.alpha, 'gamma': loss.gamma},
+                           checkpoint_path + '/m-' + launchTimestamp + '-' + str("%.4f" % lossMIN) + '.pth.tar')
+						   
+# 保存到google drive
+
+# mount it
+from google.colab import drive
+drive.mount('/content/drive')
+# copy it there
+!cp example.txt /content/drive/MyDrive
